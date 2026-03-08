@@ -296,6 +296,54 @@ If the dev server is running, the viewer updates automatically after each build.
 - **websockets** -- hot reload (optional, dev server works without it)
 - **macOS** or **Linux** (Windows may work but is untested)
 
+## Roadmap
+
+### v0.2 — Incremental Builds
+- Dependency graph between modules (skip unchanged modules on rebuild)
+- Persistent FreeCADCmd process with stdin/stdout protocol for sub-second rebuilds
+- Build cache with hash-based invalidation per module
+- Parallel module compilation for independent branches
+
+### v0.3 — Viewer Pro
+- Measurement tool (click two points to see distance)
+- Section plane / clipping box to inspect interiors
+- Dimension annotations overlay from config.py values
+- Screenshot and turntable video export
+- Dark/light theme toggle
+- Touch controls for mobile/tablet
+
+### v0.4 — Component Library
+- Reusable parametric components (doors, windows, stairs, furniture)
+- Component registry with search and preview
+- `cadforge add window --width 1.2 --height 1.4` CLI for scaffolding
+- Snap/alignment system for placing components relative to walls
+
+### v0.5 — Multi-format Export
+- IFC export for BIM interoperability
+- DXF/DWG floor plan generation from 3D model
+- PDF floor plans with auto-dimensioning (replace matplotlib approach)
+- USDZ export for Apple Quick Look / AR preview
+- Blender integration (direct .blend export with materials)
+
+### v0.6 — Collaboration
+- Project diffing — visual 3D diff between two builds
+- Git-friendly module format with merge support
+- Comments and annotations anchored to 3D positions
+- Shared dev server with multi-user cursor presence
+
+### v0.7 — Advanced Geometry
+- CSG tree inspector in viewer (visualize boolean operations)
+- Parametric constraints engine (wall A must align with wall B)
+- Terrain import from GeoTIFF / point cloud
+- Structural analysis integration (load paths, span checks)
+
+### v1.0 — Production
+- Plugin system for custom build steps and exporters
+- CI/CD integration (GitHub Actions for automated builds and previews)
+- Hosted viewer with shareable links (static deploy to Vercel/Netlify)
+- Comprehensive test suite and API stability guarantees
+- Windows support and cross-platform installer
+
 ## License
 
 See LICENSE file for details.
