@@ -1,0 +1,31 @@
+[project]
+name = "house-88m2"
+units = "mm"
+freecad = "/Applications/FreeCAD.app/Contents/Resources/bin/freecadcmd"
+project_dir = "project"
+
+[modules]
+# Порядок сборки — зависимости первыми
+sequence = [
+    "site.ground",
+    "site.landscape",
+    "houses.main_house",
+    "houses.guest_house",
+    "interior.walls",
+    "interior.furniture",
+    "exterior.roofs",
+    "exterior.windows",
+    "exterior.finishing",
+]
+
+[export]
+formats = ["stl", "gltf"]
+mesh_deflection = 0.5
+output_dir = "dist"
+
+[dev]
+port = 3131
+ws_port = 3132
+watch = ["project/**/*.py"]
+auto_open = true
+debounce_ms = 500

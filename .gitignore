@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Build output
+dist/
+
+# FreeCAD files (large binary)
+*.FCStd
+
+# Generated geometry
+*.stl
+*.glb
+
+# Generated docs
+*.pdf
+
+# Environment
+.env
+
+# macOS
+.DS_Store
+
+# Node
+node_modules/

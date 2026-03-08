@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CadForge Viewer</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #1a1a2e; color: #e0e0e0; font-family: -apple-system, system-ui, sans-serif; overflow: hidden; }
+#canvas { width: 100vw; height: 100vh; display: block; }
+
+#toolbar {
+    position: fixed; top: 12px; left: 12px;
+    display: flex; gap: 6px; z-index: 10;
+}
+#toolbar button {
+    background: rgba(30,30,50,0.85); border: 1px solid #444; color: #ccc;
+    padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;
+    backdrop-filter: blur(8px);
+}
+#toolbar button:hover { background: rgba(60,60,100,0.9); color: #fff; }
+#toolbar button.active { border-color: #6c8cff; color: #8cacff; }
+
+#status {
+    position: fixed; bottom: 12px; left: 12px;
+    background: rgba(30,30,50,0.85); padding: 8px 14px; border-radius: 6px;
+    font-size: 12px; backdrop-filter: blur(8px); z-index: 10;
+    border: 1px solid #333;
+}
+#status .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+#status .dot.ok { background: #4caf50; }
+#status .dot.building { background: #ff9800; animation: pulse 0.8s infinite; }
+#status .dot.error { background: #f44336; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+#info {
+    position: fixed; top: 12px; right: 12px;
+    background: rgba(30,30,50,0.85); padding: 10px 14px; border-radius: 6px;
+    font-size: 11px; backdrop-filter: blur(8px); z-index: 10;
+    border: 1px solid #333; min-width: 180px;
+}
+#info h3 { font-size: 13px; margin-bottom: 6px; color: #8cacff; }
+#info .row { display: flex; justify-content: space-between; margin: 2px 0; }
+#info .label { color: #888; }
+
+#layers {
+    position: fixed; bottom: 12px; right: 12px;
+    background: rgba(30,30,50,0.85); padding: 10px 14px; border-radius: 6px;
+    font-size: 11px; backdrop-filter: blur(8px); z-index: 10;
+    border: 1px solid #333; max-height: 300px; overflow-y: auto;
+}
+#layers h3 { font-size: 13px; margin-bottom: 6px; color: #8cacff; }
+#layers label { display: block; padding: 2px 0; cursor: pointer; }
+#layers label:hover { color: #fff; }
+#layers input { margin-right: 6px; }
+
+#toast {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: rgba(30,30,50,0.95); padding: 20px 30px; border-radius: 8px;
+    font-size: 14px; z-index: 100; border: 1px solid #6c8cff;
+    display: none; text-align: center;
+}
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div id="toolbar">
+    <button onclick="resetView()">Reset</button>
+    <button onclick="setView('top')">Top</button>
+    <button onclick="setView('front')">Front</button>
+    <button onclick="setView('right')">Right</button>
+    <button onclick="setView('iso')">Iso</button>
+    <button onclick="toggleWireframe()" id="btnWire">Wire</button>
+    <button onclick="toggleGrid()" id="btnGrid">Grid</button>
+    <button onclick="reloadModel()" id="btnReload" style="border-color:#4caf50;color:#4caf50">Reload</button>
+    <button onclick="toggleFly()" id="btnFly">Fly</button>
+</div>
+
+<div id="log" style="position:fixed;bottom:50px;left:12px;background:rgba(30,30,50,0.9);padding:8px 12px;border-radius:6px;font-size:11px;max-width:500px;max-height:150px;overflow-y:auto;z-index:10;border:1px solid #333;font-family:monospace;display:none"></div>
+
+<div id="status">
+    <span class="dot ok" id="statusDot"></span>
+    <span id="statusText">Ready</span>
+</div>
+
+<div id="info">
+    <h3>CadForge</h3>
+    <div class="row"><span class="label">Objects:</span><span id="objCount">-</span></div>
+    <div class="row"><span class="label">Build:</span><span id="buildTime">-</span></div>
+    <div class="row"><span class="label">Selected:</span><span id="selName">-</span></div>
+</div>
+
+<div id="layers">
+    <h3>Layers</h3>
+    <div id="layerList"></div>
+</div>
+
+<div id="toast"></div>
+
+<!-- Three.js from CDN -->
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+// Scene setup
+const canvas = document.getElementById('canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setClearColor(0x1a1a2e);
+renderer.shadowMap.enabled = true;
+
+const scene = new THREE.Scene();
+// FreeCAD uses Z-up, three.js uses Y-up — set scene up to Z
+scene.up.set(0, 0, 1);
+
+// Camera
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 10, 200000);
+camera.up.set(0, 0, 1);
+camera.position.set(30000, -40000, 25000);
+
+// Controls
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.1;
+controls.target.set(11000, 25000, 2000);
+controls.update();
+
+// Lights
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+scene.add(ambientLight);
+
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+dirLight.position.set(20000, -15000, 30000);
+dirLight.castShadow = true;
+scene.add(dirLight);
+
+const fillLight = new THREE.DirectionalLight(0x8888ff, 0.3);
+fillLight.position.set(-15000, 20000, 10000);
+scene.add(fillLight);
+
+// Grid — лежит на XY плоскости (Z-up мир)
+const gridHelper = new THREE.GridHelper(60000, 60, 0x444466, 0x333355);
+gridHelper.rotation.x = Math.PI / 2;
+scene.add(gridHelper);
+
+// Axes
+const axesHelper = new THREE.AxesHelper(5000);
+scene.add(axesHelper);
+
+// ============================================================
+// FLY MODE — WASD + стрелки + мышь
+// ============================================================
+let flyMode = false;
+let flySpeed = 100; // базовая скорость (мм за тик), Shift ускоряет x5
+const flyKeys = {};
+let flyYaw = 0;
+let flyPitch = -0.3; // slightly looking down
+let pointerLocked = false;
+
+window.toggleFly = function() {
+    flyMode = !flyMode;
+    document.getElementById('btnFly').classList.toggle('active', flyMode);
+
+    if (flyMode) {
+        controls.enabled = false;
+        // Init fly direction from current camera
+        const dir = new THREE.Vector3();
+        camera.getWorldDirection(dir);
+        flyYaw = Math.atan2(dir.y, dir.x);
+        flyPitch = Math.asin(THREE.MathUtils.clamp(dir.z, -1, 1));
+        canvas.requestPointerLock();
+        log('Fly mode ON — WASD/arrows move, mouse look, Q/E up/down, Esc exit');
+    } else {
+        controls.enabled = true;
+        document.exitPointerLock();
+        log('Fly mode OFF — orbit controls');
+    }
+};
+
+document.addEventListener('pointerlockchange', () => {
+    pointerLocked = document.pointerLockElement === canvas;
+    if (!pointerLocked && flyMode) {
+        // User pressed Esc — exit fly mode
+        flyMode = false;
+        controls.enabled = true;
+        document.getElementById('btnFly').classList.remove('active');
+    }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+    if (!flyMode || !pointerLocked) return;
+    const sensitivity = 0.0008;
+    flyYaw -= e.movementX * sensitivity;
+    flyPitch -= e.movementY * sensitivity;
+    flyPitch = THREE.MathUtils.clamp(flyPitch, -Math.PI / 2 + 0.05, Math.PI / 2 - 0.05);
+});
+
+document.addEventListener('keydown', (e) => {
+    flyKeys[e.code] = true;
+    if (flyMode) {
+        // +/= ускорить, -/_ замедлить
+        if (e.code === 'Equal' || e.code === 'NumpadAdd') {
+            flySpeed = Math.min(flySpeed * 1.5, 5000);
+            log(`Fly speed: ${flySpeed.toFixed(0)}`);
+        }
+        if (e.code === 'Minus' || e.code === 'NumpadSubtract') {
+            flySpeed = Math.max(flySpeed / 1.5, 10);
+            log(`Fly speed: ${flySpeed.toFixed(0)}`);
+        }
+    }
+});
+
+document.addEventListener('keyup', (e) => {
+    flyKeys[e.code] = false;
+});
+
+// Колёсико / тачпад скролл в fly mode — меняет скорость
+canvas.addEventListener('wheel', (e) => {
+    if (!flyMode) return;
+    e.preventDefault();
+    flySpeed *= e.deltaY > 0 ? 0.8 : 1.25;
+    flySpeed = THREE.MathUtils.clamp(flySpeed, 10, 5000);
+    log(`Fly speed: ${flySpeed.toFixed(0)}`);
+}, { passive: false });
+
+function updateFly(delta) {
+    if (!flyMode) return;
+
+    // Shift = ускорение x5, колёсико мыши меняет flySpeed
+    const boost = flyKeys['ShiftLeft'] || flyKeys['ShiftRight'] ? 5 : 1;
+    const speed = flySpeed * boost * delta;
+
+    // Вектор направления камеры (куда смотрим)
+    const lookDir = new THREE.Vector3(
+        Math.cos(flyPitch) * Math.cos(flyYaw),
+        Math.cos(flyPitch) * Math.sin(flyYaw),
+        Math.sin(flyPitch),
+    );
+    // Вектор вправо (перпендикулярно направлению, в горизонтальной плоскости)
+    const worldUp = new THREE.Vector3(0, 0, 1);
+    const right = new THREE.Vector3().crossVectors(lookDir, worldUp).normalize();
+    // Вектор вверх камеры (перпендикулярно forward и right)
+    const camUp = new THREE.Vector3().crossVectors(right, lookDir).normalize();
+
+    const move = new THREE.Vector3();
+    // W/S — движение вдоль вектора камеры (вперёд/назад включая наклон)
+    if (flyKeys['KeyW'] || flyKeys['ArrowUp'])    move.add(lookDir);
+    if (flyKeys['KeyS'] || flyKeys['ArrowDown'])  move.sub(lookDir);
+    // A/D — стрейф влево/вправо
+    if (flyKeys['KeyA'] || flyKeys['ArrowLeft'])   move.sub(right);
+    if (flyKeys['KeyD'] || flyKeys['ArrowRight']) move.add(right);
+    // Q/Space — вверх, E — вниз (по мировой оси Z)
+    if (flyKeys['KeyQ'] || flyKeys['Space'])      move.add(worldUp);
+    if (flyKeys['KeyE'])                          move.sub(worldUp);
+
+    if (move.lengthSq() > 0) {
+        move.normalize().multiplyScalar(speed);
+        camera.position.add(move);
+    }
+
+    // Обновить направление камеры
+    const target = camera.position.clone().add(lookDir);
+    camera.lookAt(target);
+
+    // Синхронизировать orbit target для переключения обратно
+    controls.target.copy(target);
+}
+
+// State
+let modelGroup = null;
+let wireframeMode = false;
+let objectNames = {};
+
+// Raycaster for picking
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let selectedMesh = null;
+let highlightMaterial = null;
+
+// Load model
+const loader = new GLTFLoader();
+
+function log(msg) {
+    const el = document.getElementById('log');
+    el.style.display = 'block';
+    const line = document.createElement('div');
+    line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    el.appendChild(line);
+    el.scrollTop = el.scrollHeight;
+    // Keep last 20 lines
+    while (el.children.length > 20) el.removeChild(el.firstChild);
+    console.log(msg);
+}
+
+async function loadModel(url) {
+    if (!url) url = '/dist/model.glb';
+
+    log('Fetching model...');
+
+    try {
+        const response = await fetch(url, { cache: 'no-store' });
+        if (!response.ok) {
+            log(`HTTP ${response.status}: ${response.statusText}`);
+            setStatus('No build yet — run: cadforge build', 'error');
+            return;
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        log(`Downloaded ${(arrayBuffer.byteLength / 1024).toFixed(0)} KB`);
+        setStatus('Parsing model...', 'building');
+
+        loader.parse(arrayBuffer, '', (gltf) => {
+            if (modelGroup) {
+                scene.remove(modelGroup);
+                modelGroup.traverse(c => {
+                    if (c.isMesh) { c.geometry.dispose(); c.material.dispose(); }
+                });
+            }
+            modelGroup = gltf.scene;
+            scene.add(modelGroup);
+
+            // Collect object names and build layers by module group
+            objectNames = {};
+            const layers = {};
+            modelGroup.traverse((child) => {
+                if (child.isMesh) {
+                    const fullName = child.name || child.parent?.name || 'unnamed';
+                    // Формат: "module.name::ObjectName"
+                    const parts = fullName.split('::');
+                    const group = parts.length > 1 ? parts[0] : 'other';
+                    const objName = parts.length > 1 ? parts[1] : fullName;
+                    objectNames[child.uuid] = objName;
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+
+                    if (!layers[group]) layers[group] = [];
+                    layers[group].push(child);
+                }
+            });
+
+            updateLayerPanel(layers);
+            fitCamera();
+
+            const count = Object.keys(objectNames).length;
+            document.getElementById('objCount').textContent = count;
+            log(`Loaded ${count} objects`);
+            setStatus(`Loaded: ${count} objects`, 'ok');
+        }, (err) => {
+            log(`Parse error: ${err.message || err}`);
+            setStatus('Parse error', 'error');
+        });
+
+    } catch (err) {
+        log(`Fetch error: ${err.message}`);
+        setStatus('Load error', 'error');
+    }
+}
+
+window.reloadModel = function() {
+    log('Manual reload...');
+    loadModel();
+};
+
+function fitCamera() {
+    if (!modelGroup) return;
+    const box = new THREE.Box3().setFromObject(modelGroup);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+
+    controls.target.copy(center);
+    // Z-up: смотрим с юго-запада сверху
+    camera.position.set(
+        center.x - maxDim * 0.6,
+        center.y - maxDim * 0.8,
+        center.z + maxDim * 0.5
+    );
+    camera.up.set(0, 0, 1);
+    controls.update();
+}
+
+// Человекочитаемые названия групп
+const GROUP_LABELS = {
+    'site.ground':          'Site',
+    'site.landscape':       'Landscape',
+    'houses.main_house':    'Main House',
+    'houses.guest_house':   'Guest House',
+    'interior.walls':       'Interior Walls',
+    'interior.furniture':   'Furniture',
+    'exterior.roofs':       'Roofs',
+    'exterior.windows':     'Windows',
+    'exterior.finishing':   'Finishing',
+};
+
+function updateLayerPanel(layers) {
+    const container = document.getElementById('layerList');
+    container.innerHTML = '';
+
+    // Кнопки "Все вкл / все выкл"
+    const controls = document.createElement('div');
+    controls.style.cssText = 'margin-bottom:6px;display:flex;gap:4px';
+    const btnAll = document.createElement('button');
+    btnAll.textContent = 'All';
+    btnAll.style.cssText = 'font-size:10px;padding:2px 6px;background:#333;color:#aaa;border:1px solid #555;border-radius:3px;cursor:pointer';
+    const btnNone = document.createElement('button');
+    btnNone.textContent = 'None';
+    btnNone.style.cssText = btnAll.style.cssText;
+    controls.appendChild(btnAll);
+    controls.appendChild(btnNone);
+    container.appendChild(controls);
+
+    const allCheckboxes = [];
+
+    for (const [name, meshes] of Object.entries(layers).sort()) {
+        const label = document.createElement('label');
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = true;
+        cb.addEventListener('change', () => {
+            meshes.forEach(m => { m.visible = cb.checked; });
+        });
+        allCheckboxes.push({ cb, meshes });
+        label.appendChild(cb);
+        const displayName = GROUP_LABELS[name] || name;
+        label.appendChild(document.createTextNode(` ${displayName} (${meshes.length})`));
+        container.appendChild(label);
+    }
+
+    btnAll.onclick = () => {
+        allCheckboxes.forEach(({ cb, meshes }) => { cb.checked = true; meshes.forEach(m => m.visible = true); });
+    };
+    btnNone.onclick = () => {
+        allCheckboxes.forEach(({ cb, meshes }) => { cb.checked = false; meshes.forEach(m => m.visible = false); });
+    };
+}
+
+// View presets (Z-up coordinate system)
+window.setView = function(view) {
+    if (!modelGroup) return;
+    const box = new THREE.Box3().setFromObject(modelGroup);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    const d = Math.max(size.x, size.y, size.z) * 1.2;
+
+    const positions = {
+        top:   [center.x, center.y, center.z + d],           // сверху, Z-up
+        front: [center.x, center.y - d, center.z + d * 0.1], // спереди (юг)
+        right: [center.x + d, center.y, center.z + d * 0.1], // справа (восток)
+        iso:   [center.x - d * 0.6, center.y - d * 0.8, center.z + d * 0.5],
+    };
+
+    const pos = positions[view] || positions.iso;
+    camera.position.set(...pos);
+    camera.up.set(0, 0, 1);
+    controls.target.copy(center);
+    controls.update();
+};
+
+window.resetView = function() {
+    fitCamera();
+};
+
+window.toggleWireframe = function() {
+    wireframeMode = !wireframeMode;
+    document.getElementById('btnWire').classList.toggle('active', wireframeMode);
+    if (modelGroup) {
+        modelGroup.traverse((child) => {
+            if (child.isMesh && child.material) {
+                child.material.wireframe = wireframeMode;
+            }
+        });
+    }
+};
+
+window.toggleGrid = function() {
+    gridHelper.visible = !gridHelper.visible;
+    document.getElementById('btnGrid').classList.toggle('active', !gridHelper.visible);
+};
+
+// Object picking
+canvas.addEventListener('click', (event) => {
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    if (!modelGroup) return;
+
+    const meshes = [];
+    modelGroup.traverse(c => { if (c.isMesh) meshes.push(c); });
+    const intersects = raycaster.intersectObjects(meshes);
+
+    // Reset previous selection
+    if (selectedMesh && selectedMesh._origMaterial) {
+        selectedMesh.material = selectedMesh._origMaterial;
+    }
+
+    if (intersects.length > 0) {
+        const mesh = intersects[0].object;
+        selectedMesh = mesh;
+        const name = objectNames[mesh.uuid] || 'unknown';
+        document.getElementById('selName').textContent = name;
+
+        // Highlight
+        mesh._origMaterial = mesh.material;
+        mesh.material = mesh.material.clone();
+        mesh.material.emissive = new THREE.Color(0x3366ff);
+        mesh.material.emissiveIntensity = 0.4;
+    } else {
+        selectedMesh = null;
+        document.getElementById('selName').textContent = '-';
+    }
+});
+
+// Status
+function setStatus(text, state) {
+    document.getElementById('statusText').textContent = text;
+    const dot = document.getElementById('statusDot');
+    dot.className = 'dot ' + (state || 'ok');
+}
+
+function showToast(msg, duration) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, duration || 2000);
+}
+
+// WebSocket for hot reload
+function connectWS() {
+    const wsPort = 3132;
+    let ws;
+
+    function connect() {
+        ws = new WebSocket(`ws://localhost:${wsPort}`);
+
+        ws.onopen = () => {
+            console.log('WS connected');
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+
+            switch (data.type) {
+                case 'build_start':
+                    setStatus('Building...', 'building');
+                    showToast('Rebuilding...');
+                    break;
+                case 'build_complete':
+                    setStatus(`Built in ${data.time}s — ${data.objects} objects`, 'ok');
+                    document.getElementById('buildTime').textContent = `${data.time}s`;
+                    document.getElementById('objCount').textContent = data.objects;
+                    loadModel();
+                    showToast('Build complete!', 1500);
+                    break;
+                case 'build_error':
+                    setStatus('Build failed', 'error');
+                    showToast('Build error!', 3000);
+                    break;
+            }
+        };
+
+        ws.onclose = () => {
+            setTimeout(connect, 3000);
+        };
+
+        ws.onerror = () => {
+            ws.close();
+        };
+    }
+
+    connect();
+}
+
+// Resize
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Animate
+const clock = new THREE.Clock();
+function animate() {
+    requestAnimationFrame(animate);
+    const delta = clock.getDelta();
+    if (flyMode) {
+        updateFly(delta * 1000); // delta in ms for flySpeed
+    } else {
+        controls.update();
+    }
+    renderer.render(scene, camera);
+}
+animate();
+
+// Init
+loadModel();
+connectWS();
+</script>
+</body>
+</html>

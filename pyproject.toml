@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cadforge"
+version = "0.1.0"
+description = "Modular CAD framework on top of FreeCAD with headless build, browser viewer, and AI integration"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [
+    { name = "CadForge" },
+]
+
+dependencies = [
+    "trimesh",
+    "numpy",
+    "websockets",
+]
+
+[project.optional-dependencies]
+mcp = ["mcp"]
+
+[project.scripts]
+cadforge = "cadforge.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["cadforge*"]
