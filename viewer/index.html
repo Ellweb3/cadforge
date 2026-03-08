@@ -337,11 +337,22 @@ async function loadModel(url) {
             const layers = {};
             modelGroup.traverse((child) => {
                 if (child.isMesh) {
-                    const fullName = child.name || child.parent?.name || 'unnamed';
-                    // Формат: "module.name::ObjectName"
-                    const parts = fullName.split('::');
-                    const group = parts.length > 1 ? parts[0] : 'other';
-                    const objName = parts.length > 1 ? parts[1] : fullName;
+                    // GLTFLoader: mesh is child of a named node
+                    // Walk up to find node with "group::name" pattern
+                    let fullName = '';
+                    let node = child;
+                    while (node && node !== modelGroup) {
+                        if (node.name) {
+                            fullName = node.name;
+                            if (fullName.includes('--')) break;
+                        }
+                        node = node.parent;
+                    }
+                    if (!fullName) fullName = 'unnamed';
+
+                    const sep = fullName.indexOf('--');
+                    const group = sep > -1 ? fullName.substring(0, sep) : 'other';
+                    const objName = (sep > -1 ? fullName.substring(sep + 2) : fullName).replace('.stl', '');
                     objectNames[child.uuid] = objName;
                     child.castShadow = true;
                     child.receiveShadow = true;
@@ -350,6 +361,18 @@ async function loadModel(url) {
                     layers[group].push(child);
                 }
             });
+            // Debug: print first mesh's hierarchy
+            let debugDone = false;
+            modelGroup.traverse((c) => {
+                if (c.isMesh && !debugDone) {
+                    debugDone = true;
+                    let path = [];
+                    let n = c;
+                    while (n) { path.push(n.name || '(no name)'); n = n.parent; }
+                    console.log('First mesh hierarchy:', path);
+                }
+            });
+            console.log('Layers:', Object.keys(layers), 'Total meshes:', Object.keys(objectNames).length);
 
             updateLayerPanel(layers);
             fitCamera();

@@ -58,8 +58,8 @@ def stl_to_gltf(export_dir, manifest_path=None):
             )
             mesh.visual = trimesh.visual.TextureVisuals(material=material)
 
-            group = obj.get("group", "other")
-            scene.add_geometry(mesh, node_name=f'{group}::{obj["name"]}')
+            group = obj.get("group", "other").replace(".", "-")
+            scene.add_geometry(mesh, node_name=f'{group}--{obj["name"]}')
         except Exception as e:
             print(f"  WARN: skip {obj['name']}: {e}")
 

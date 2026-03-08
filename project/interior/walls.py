@@ -12,7 +12,7 @@ def build(doc):
     bi = BX + WALL_T
     br = BX + B_W - WALL_T
     bt = BY + WALL_T
-    corr_x = BX + WALL_T + CORR_W
+    corr_x = BX + B_W - WALL_T - CORR_W  # коридор справа (примыкает к A)
     dorm1_y = BY + B_D - WALL_T - DORM1_H
     bano1_y = dorm1_y - BANO1_H
     bano2_y = bano1_y - BANO2_H

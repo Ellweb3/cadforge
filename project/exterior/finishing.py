@@ -35,12 +35,12 @@ def _paths(doc):
     """Дорожки и входные площадки."""
     # Дорожка от забора к дому
     path = Part.makeBox(1.5 * M, HOUSE_Y, 30)
-    path.translate(FreeCAD.Vector(BX + 0.2 * M, 0, 0))
+    path.translate(FreeCAD.Vector(BX + B_W - 0.5 * M, 0, 0))
     add_obj(doc, "Path", path, COL_SLAB)
 
     # Площадка перед входом
     entry = Part.makeBox(3 * M, 2 * M, 40)
-    entry.translate(FreeCAD.Vector(BX - 1 * M, AY - 3 * M, 0))
+    entry.translate(FreeCAD.Vector(BX + B_W - 1.5 * M, AY - 3 * M, 0))
     add_obj(doc, "Entry", entry, COL_PATH)
 
 
