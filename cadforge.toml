@@ -24,8 +24,8 @@ mesh_deflection = 0.5
 output_dir = "dist"
 
 [dev]
-port = 3131
+port = 3133
 ws_port = 3132
 watch = ["project/**/*.py"]
-auto_open = true
+auto_open = false
 debounce_ms = 500

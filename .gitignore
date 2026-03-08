@@ -27,3 +27,5 @@ dist/
 
 # Node
 node_modules/
+.vite/
+viewer/build/
