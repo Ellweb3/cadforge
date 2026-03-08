@@ -1,5 +1,9 @@
 # CadForge
 
+<p align="center">
+  <img src="docs/logo.png" alt="CadForge" width="200">
+</p>
+
 ![CadForge Viewer](docs/screenshot.png)
 
 A modular CAD framework built on top of FreeCAD's OpenCASCADE geometry engine. Define building modules in Python, compile headless via FreeCADCmd, export to glTF, and preview in a browser-based 3D viewer with hot reload.
