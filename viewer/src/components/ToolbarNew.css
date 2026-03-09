@@ -1,0 +1,138 @@
+/* ToolbarNew — horizontal grouped toolbar */
+
+.toolbar-new {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+/* ---- Group ---- */
+.tb-group {
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+  padding-right: 8px;
+  margin-right: 4px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tb-group:last-child {
+  border-right: none;
+  padding-right: 0;
+  margin-right: 0;
+}
+
+/* ---- Button ---- */
+.tb-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 2px 0;
+  gap: 1px;
+  background: rgba(22, 22, 38, 0.88);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #aab;
+  cursor: pointer;
+  font-family: inherit;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+}
+
+.tb-btn:hover {
+  background: rgba(50, 50, 80, 0.92);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.tb-btn:active {
+  transform: translateY(0);
+  background: rgba(40, 40, 70, 0.95);
+}
+
+/* ---- Icon ---- */
+.tb-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* ---- Label ---- */
+.tb-label {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+
+/* ---- Active state ---- */
+.tb-active {
+  border-bottom-width: 2.5px;
+  background: rgba(40, 40, 72, 0.92);
+  color: #fff;
+}
+
+.tb-active .tb-label {
+  opacity: 1;
+}
+
+/* ---- Responsive: small screens hide labels ---- */
+@media (max-width: 768px) {
+  .tb-label {
+    display: none;
+  }
+
+  .tb-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .tb-icon {
+    font-size: 18px;
+  }
+
+  .toolbar-new {
+    top: 8px;
+    left: 8px;
+    gap: 1px;
+  }
+
+  .tb-group {
+    gap: 1px;
+    padding-right: 6px;
+    margin-right: 2px;
+  }
+}
+
+/* ---- Very small: stack groups ---- */
+@media (max-width: 480px) {
+  .toolbar-new {
+    flex-wrap: wrap;
+    max-width: calc(100vw - 16px);
+  }
+
+  .tb-group {
+    border-right: none;
+    padding-right: 4px;
+    margin-right: 2px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding-bottom: 4px;
+    margin-bottom: 2px;
+  }
+
+  .tb-group:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
+}

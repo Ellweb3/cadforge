@@ -1,0 +1,15 @@
+.minimap {
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(20, 20, 40, 0.85);
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 4px;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+}
+.minimap canvas {
+  display: block;
+  border-radius: 3px;
+}

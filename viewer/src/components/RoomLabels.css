@@ -1,0 +1,19 @@
+.room-label {
+  background: rgba(20, 20, 40, 0.8);
+  color: #dde;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+  text-align: center;
+  border: 1px solid rgba(100, 130, 255, 0.3);
+}
+.room-label .room-name {
+  font-weight: 600;
+  color: #8cacff;
+}
+.room-label .room-area {
+  font-size: 10px;
+  color: #888;
+}

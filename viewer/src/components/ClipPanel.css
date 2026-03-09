@@ -1,0 +1,85 @@
+/* Clip / Section Plane panel */
+.clip-panel {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 380px;
+}
+
+.clip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.clip-title {
+  color: #8cacff;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.clip-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #aaa;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.clip-toggle input[type="checkbox"] {
+  accent-color: #4488ff;
+}
+
+.clip-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.clip-label {
+  color: #888;
+}
+
+.clip-slider {
+  flex: 1;
+  accent-color: #4488ff;
+}
+
+.clip-value {
+  min-width: 36px;
+  text-align: center;
+  color: #eee;
+  font-family: monospace;
+}
+
+.clip-presets {
+  display: flex;
+  gap: 4px;
+}
+
+.clip-presets button {
+  flex: 1;
+  font-size: 10px;
+  padding: 3px 6px;
+  background: #333;
+  color: #aaa;
+  border: 1px solid #555;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.clip-presets button:hover {
+  background: #444;
+  color: #ddd;
+}
+
+.clip-presets button.active {
+  background: #4488ff;
+  color: #fff;
+  border-color: #4488ff;
+}

@@ -8,6 +8,11 @@ import { ModelLoader } from './ModelLoader'
 import { SunLight } from './SunLight'
 import { SunMarker } from './SunMarker'
 import { CompassRose } from './CompassRose'
+import { FloorPlanMode } from './FloorPlanMode'
+import { MeasureTool } from './MeasureTool'
+import RoomLabels from './RoomLabels'
+import { ScreenshotCapture } from './ScreenshotCapture'
+import { SceneExporter } from './SceneExporter'
 
 function SceneContent({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasElement | null> }) {
   const { camera, scene } = useThree()
@@ -15,7 +20,7 @@ function SceneContent({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasElem
   const flyMode = useStore(s => s.flyMode)
   const gridVisible = useStore(s => s.gridVisible)
   const sunPanelOpen = useStore(s => s.sunPanelOpen)
-  const elevation = useStore(s => s.sunTimeMinutes) // triggers re-render on time change
+  const floorPlanMode = useStore(s => s.floorPlanMode)
 
   const [modelCenter, setModelCenter] = useState<[number, number, number]>([11000, 25000, 0])
 
@@ -85,12 +90,6 @@ function SceneContent({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasElem
     camera.up.set(0, 0, 1)
   }, [camera, scene])
 
-  // Background color based on sun
-  const sunStore = useStore.getState()
-  useFrame(() => {
-    // Dynamically set from SunLight — simplified here
-  })
-
   return (
     <>
       <OrbitControls
@@ -134,6 +133,21 @@ function SceneContent({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasElem
         </>
       )}
 
+      {/* Floor plan mode (clipping) */}
+      <FloorPlanMode />
+
+      {/* Measurement tool */}
+      <MeasureTool />
+
+      {/* Room labels */}
+      <RoomLabels floorPlanMode={floorPlanMode} />
+
+      {/* Screenshot capture */}
+      <ScreenshotCapture />
+
+      {/* Scene exporter (stores scene ref for export panel) */}
+      <SceneExporter />
+
       {/* Model loader (imperative) */}
       <ModelLoader onCenterUpdate={handleCenterUpdate} />
     </>
@@ -148,7 +162,7 @@ export function Scene() {
       ref={canvasRef}
       camera={{ fov: 45, near: 10, far: 200000, up: [0, 0, 1] }}
       shadows={{ type: THREE.PCFSoftShadowMap }}
-      gl={{ antialias: true }}
+      gl={{ antialias: true, preserveDrawingBuffer: true }}
       style={{ width: '100vw', height: '100vh', display: 'block' }}
       onCreated={({ gl }) => {
         gl.setClearColor(0x87cefa)
