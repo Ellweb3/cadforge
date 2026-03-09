@@ -21,7 +21,7 @@ def _slab(doc):
     slab_a.translate(FreeCAD.Vector(AX - 0.1 * M, AY - 0.1 * M, 0))
     slab_b = Part.makeBox(B_W + 0.2 * M, B_D + 0.2 * M, SLAB_T)
     slab_b.translate(FreeCAD.Vector(BX - 0.1 * M, BY - 0.1 * M, 0))
-    add_obj(doc, "Slab", slab_a.fuse(slab_b), COL_SLAB)
+    add_obj(doc, "Slab", slab_a.fuse(slab_b), COL_SLAB, texture="concrete.png", tex_scale=2.0)
 
 
 def _floors(doc):
@@ -44,10 +44,20 @@ def _floors(doc):
         ("FL_D3", BX + WALL_T, BY + WALL_T,
          B_W - 2 * WALL_T - CORR_W, DORM3_H, FL_BEDROOM),
     ]
+    floor_textures = {
+        "FL_Liv": ("wood.png", 1.5),
+        "FL_Cor": ("wood.png", 1.0),
+        "FL_D1": ("wood.png", 1.5),
+        "FL_D2": ("wood.png", 1.5),
+        "FL_D3": ("wood.png", 1.5),
+        "FL_B1": ("concrete.png", 0.5),
+        "FL_B2": ("concrete.png", 0.5),
+    }
     for name, fx, fy, fw, fd, col in floors:
         fl = Part.makeBox(fw, fd, FLOOR_H)
         fl.translate(FreeCAD.Vector(fx, fy, SLAB_T))
-        add_obj(doc, name, fl, col)
+        tex, ts = floor_textures.get(name, (None, 1.0))
+        add_obj(doc, name, fl, col, texture=tex, tex_scale=ts)
 
 
 def _exterior_walls(doc):
@@ -94,5 +104,5 @@ def _exterior_walls(doc):
     w = w.cut(wcut(BX + B_W - wt3 / 2, BY + 8 * M, SLAB_T,
                    wt3, 1.0 * M, 2.2 * M, "x"))
 
-    add_obj(doc, "Ext_Walls", w, COL_SIDING)
+    add_obj(doc, "Ext_Walls", w, COL_SIDING, texture="brick.png", tex_scale=1.0)
     return w

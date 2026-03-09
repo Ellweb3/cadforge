@@ -6,8 +6,9 @@ export function Toolbar() {
   const wireframeMode = useStore(s => s.wireframeMode)
   const gridVisible = useStore(s => s.gridVisible)
   const sunPanelOpen = useStore(s => s.sunPanelOpen)
+  const chatOpen = useStore(s => s.chatOpen)
   const {
-    toggleFly, toggleWireframe, toggleGrid, toggleSunPanel, reload,
+    toggleFly, toggleWireframe, toggleGrid, toggleSunPanel, toggleChat, reload,
   } = useStore()
 
   return (
@@ -34,6 +35,10 @@ export function Toolbar() {
         className={`sun-btn ${sunPanelOpen ? 'active' : ''}`}
         onClick={toggleSunPanel}
       >Sun</button>
+      <button
+        className={`chat-btn ${chatOpen ? 'active' : ''}`}
+        onClick={toggleChat}
+      >Chat</button>
     </div>
   )
 }

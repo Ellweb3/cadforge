@@ -4,7 +4,6 @@ export function InfoPanel() {
   const objectCount = useStore(s => s.objectCount)
   const buildTime = useStore(s => s.buildTime)
   const selectedName = useStore(s => s.selectedName)
-
   return (
     <div className="panel info-panel">
       <h3>CadForge</h3>

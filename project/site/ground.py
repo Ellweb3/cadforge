@@ -12,7 +12,7 @@ def build(doc):
     # Земля (ровная часть)
     ground = Part.makeBox(PLOT_W, FLAT_ZONE, 80)
     ground.translate(FreeCAD.Vector(0, 0, -80))
-    add_obj(doc, "Ground", ground, COL_GROUND)
+    add_obj(doc, "Ground", ground, COL_GROUND, texture="grass.png", tex_scale=3.0)
 
     # Склон оврага (10 ступеней, спуск от уровня земли вниз)
     steps = 10

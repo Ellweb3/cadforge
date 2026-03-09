@@ -23,7 +23,7 @@ def cmd_build(args):
 
     if result["success"] and "gltf" in m["export"].get("formats", []):
         print("\n  Phase 3: Converting to glTF...")
-        exporter.stl_to_gltf(result["export_dir"])
+        exporter.stl_to_gltf(result["export_dir"], project_root=m["root_dir"])
         if not args.keep_stl:
             exporter.cleanup_stls(result["export_dir"])
 
@@ -71,7 +71,7 @@ def cmd_dev(args):
     print("\n  Initial build...")
     result = compiler.compile_and_build(m)
     if result["success"] and "gltf" in m["export"].get("formats", []):
-        exporter.stl_to_gltf(result["export_dir"])
+        exporter.stl_to_gltf(result["export_dir"], project_root=m["root_dir"])
         exporter.cleanup_stls(result["export_dir"])
 
     # Стартуем серверы
@@ -90,7 +90,7 @@ def cmd_dev(args):
 
         result = compiler.compile_and_build(m)
         if result["success"] and "gltf" in m["export"].get("formats", []):
-            exporter.stl_to_gltf(result["export_dir"])
+            exporter.stl_to_gltf(result["export_dir"], project_root=m["root_dir"])
             exporter.cleanup_stls(result["export_dir"])
 
         elapsed = time.time() - t0

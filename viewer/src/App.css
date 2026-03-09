@@ -26,8 +26,8 @@ body {
 /* Info panel */
 .info-panel {
   position: fixed;
-  top: 12px;
-  right: 12px;
+  top: 50px;
+  left: 12px;
   min-width: 180px;
 }
 .info-panel .row {
@@ -42,9 +42,9 @@ body {
 /* Layer panel */
 .layer-panel {
   position: fixed;
-  bottom: 12px;
-  right: 12px;
-  max-height: 300px;
+  top: 140px;
+  left: 12px;
+  max-height: calc(100vh - 210px);
   overflow-y: auto;
 }
 .layer-controls {

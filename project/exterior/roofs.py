@@ -23,7 +23,7 @@ def _roof_block_b(doc):
     face = Part.Face(wire)
     roof = face.extrude(FreeCAD.Vector(0, B_D + 2 * ov, 0))
     roof.translate(FreeCAD.Vector(BX, BY - ov, SLAB_T + WALL_H))
-    add_obj(doc, "Roof_B", roof, COL_ROOF)
+    add_obj(doc, "Roof_B", roof, COL_ROOF, texture="roof_tile.png", tex_scale=0.5)
 
 
 def _roof_block_a(doc):
@@ -39,4 +39,4 @@ def _roof_block_a(doc):
     face = Part.Face(wire)
     roof = face.extrude(FreeCAD.Vector(0, A_D + 2 * ov, 0))
     roof.translate(FreeCAD.Vector(AX, AY - ov, SLAB_T + WALL_H))
-    add_obj(doc, "Roof_A", roof, COL_ROOF)
+    add_obj(doc, "Roof_A", roof, COL_ROOF, texture="roof_tile.png", tex_scale=0.5)

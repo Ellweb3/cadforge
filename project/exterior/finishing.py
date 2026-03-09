@@ -32,20 +32,66 @@ def _siding(doc):
 
 
 def _paths(doc):
-    """Дорожки и входные площадки."""
-    # Дорожка от забора к дому
-    path = Part.makeBox(1.5 * M, HOUSE_Y, 30)
-    path.translate(FreeCAD.Vector(BX + B_W - 0.5 * M, 0, 0))
-    add_obj(doc, "Path", path, COL_SLAB)
+    """Изогнутые дорожки и полукруглая входная площадка."""
+    path_h = 30   # толщина покрытия
+    path_w = 1.2 * M  # ширина дорожки
 
-    # Площадка перед входом
-    entry = Part.makeBox(3 * M, 2 * M, 40)
-    entry.translate(FreeCAD.Vector(BX + B_W - 1.5 * M, AY - 3 * M, 0))
-    add_obj(doc, "Entry", entry, COL_PATH)
+    # Центр входа — на стыке блоков A и B
+    entry_x = AX
+
+    # --- 1. Полукруглая входная площадка ---
+    r_entry = 2.0 * M
+    center = FreeCAD.Vector(entry_x, AY, 0)
+    # Дуга вниз (к дороге): 180° → 360°
+    arc = Part.makeCircle(
+        r_entry, center, FreeCAD.Vector(0, 0, 1), 180, 360)
+    line_close = Part.makeLine(
+        FreeCAD.Vector(entry_x + r_entry, AY, 0),
+        FreeCAD.Vector(entry_x - r_entry, AY, 0))
+    wire_entry = Part.Wire([arc, line_close])
+    face_entry = Part.Face(wire_entry)
+    entry = face_entry.extrude(FreeCAD.Vector(0, 0, 40))
+    add_obj(doc, "Entry_Semi", entry, COL_PATH,
+            texture="concrete.png", tex_scale=1.0)
+
+    # --- 2. Главная дорожка: S-кривая от забора до площадки ---
+    bottom_y = AY - r_entry  # нижняя точка полукруга
+    pts_main = [
+        FreeCAD.Vector(entry_x + 2 * M, 0, 0),
+        FreeCAD.Vector(entry_x + 3 * M, 7 * M, 0),
+        FreeCAD.Vector(entry_x, 14 * M, 0),
+        FreeCAD.Vector(entry_x + 1.5 * M, 21 * M, 0),
+        FreeCAD.Vector(entry_x, bottom_y, 0),
+    ]
+    spl = Part.BSplineCurve()
+    spl.interpolate(pts_main)
+    wire_main = Part.Wire(spl.toShape())
+    outline = wire_main.makeOffset2D(path_w / 2)
+    face_main = Part.Face(outline)
+    main_path = face_main.extrude(FreeCAD.Vector(0, 0, path_h))
+    add_obj(doc, "Path_Main", main_path, COL_SLAB,
+            texture="concrete.png", tex_scale=1.0)
+
+    # --- 3. Дорожка к бассейну: плавная дуга ---
+    mid_y = (AY + A_D + POOL_Y) / 2
+    pts_pool = [
+        FreeCAD.Vector(AX + A_W / 2, AY + A_D + 0.3 * M, 0),
+        FreeCAD.Vector(AX + A_W / 2 + 2.5 * M, mid_y, 0),
+        FreeCAD.Vector(POOL_X + POOL_W / 2 + 1 * M, mid_y + 1 * M, 0),
+        FreeCAD.Vector(POOL_X + POOL_W / 2, POOL_Y - 0.3 * M, 0),
+    ]
+    spl2 = Part.BSplineCurve()
+    spl2.interpolate(pts_pool)
+    wire_pool = Part.Wire(spl2.toShape())
+    outline2 = wire_pool.makeOffset2D(0.5 * M)
+    face_pool = Part.Face(outline2)
+    pool_path = face_pool.extrude(FreeCAD.Vector(0, 0, path_h))
+    add_obj(doc, "Path_Pool", pool_path, COL_SLAB,
+            texture="concrete.png", tex_scale=1.0)
 
 
 def _terrace(doc):
     """Деревянная терраса перед гостиной."""
     terrace = Part.makeBox(A_W - 1 * M, 3 * M, 0.12 * M)
     terrace.translate(FreeCAD.Vector(AX + 0.5 * M, AY - 3.5 * M, 0))
-    add_obj(doc, "Terrace", terrace, COL_TERRACE)
+    add_obj(doc, "Terrace", terrace, COL_TERRACE, texture="wood.png", tex_scale=1.5)

@@ -42,3 +42,14 @@
   border-color: #ffcc00;
   color: #ffcc00;
 }
+
+.toolbar .chat-btn {
+  border-color: #a78bfa;
+  color: #a78bfa;
+}
+
+.toolbar .chat-btn.active {
+  border-color: #c4b5fd;
+  color: #c4b5fd;
+  background: rgba(167, 139, 250, 0.2);
+}

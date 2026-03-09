@@ -5,8 +5,13 @@ import FreeCAD
 import Part
 
 
-def add_obj(doc, name, shape, color, transp=0):
-    """Добавить объект Part::Feature в документ."""
+def add_obj(doc, name, shape, color, transp=0, texture=None, tex_scale=1.0):
+    """Добавить объект Part::Feature в документ.
+
+    Args:
+        texture: имя файла текстуры из project/textures/ (например "brick.jpg")
+        tex_scale: масштаб тайлинга текстуры в метрах (1.0 = 1 повтор на 1м)
+    """
     obj = doc.addObject("Part::Feature", name)
     obj.Shape = shape
     # Сохраняем цвет как строку в свойстве (работает и headless, и GUI)
@@ -16,6 +21,11 @@ def add_obj(doc, name, shape, color, transp=0):
         ",".join("%.3f" % c for c in color),
         str(transp),
     )
+    # Текстура (опционально)
+    if texture:
+        if not hasattr(obj, "CadForgeTexture"):
+            obj.addProperty("App::PropertyString", "CadForgeTexture", "CadForge")
+        obj.CadForgeTexture = "%s;%.2f" % (texture, tex_scale)
     # GUI mode — устанавливаем визуальные свойства
     if obj.ViewObject is not None:
         try:

@@ -13,6 +13,7 @@ from pathlib import Path
 # WebSocket connections
 _ws_clients = set()
 _event_loop = None
+_project_root = None
 
 
 class ViewerHandler(http.server.SimpleHTTPRequestHandler):
@@ -85,6 +86,8 @@ def make_handler(root_dir, dist_dir):
 
 def start_http(root_dir, dist_dir, port=3000):
     """Запустить HTTP сервер в фоновом потоке."""
+    global _project_root
+    _project_root = root_dir
     handler = make_handler(root_dir, dist_dir)
     httpd = socketserver.TCPServer(("", port), handler)
     httpd.allow_reuse_address = True
@@ -94,20 +97,81 @@ def start_http(root_dir, dist_dir, port=3000):
     return httpd
 
 
+_chat_sessions = {}  # ws -> session_id
+
+
 async def _ws_handler(websocket):
-    """WebSocket handler — регистрирует клиента."""
+    """WebSocket handler — регистрирует клиента, обрабатывает чат."""
     _ws_clients.add(websocket)
     try:
         async for msg in websocket:
-            # Клиент может запрашивать ребилд
             try:
                 data = json.loads(msg)
-                if data.get("type") == "request_build":
+                msg_type = data.get("type")
+
+                if msg_type == "request_build":
                     await websocket.send(json.dumps({"type": "build_queued"}))
+
+                elif msg_type == "chat":
+                    await _handle_chat(websocket, data)
+
             except json.JSONDecodeError:
                 pass
     finally:
         _ws_clients.discard(websocket)
+        _chat_sessions.pop(websocket, None)
+
+
+async def _handle_chat(websocket, data):
+    """Обработать chat сообщение — запустить claude CLI."""
+    from .chat import claude_stream
+
+    message = data.get("message", "").strip()
+    if not message:
+        return
+
+    # Отправить подтверждение
+    await websocket.send(json.dumps({
+        "type": "chat_start",
+    }))
+
+    loop = asyncio.get_event_loop()
+    session_id = _chat_sessions.get(websocket)
+
+    def on_chunk(text):
+        """Стримить текст в WebSocket."""
+        asyncio.run_coroutine_threadsafe(
+            websocket.send(json.dumps({
+                "type": "chat_delta",
+                "text": text,
+            })),
+            loop,
+        )
+
+    def on_tool(tool_name):
+        """Уведомить о вызове инструмента."""
+        asyncio.run_coroutine_threadsafe(
+            websocket.send(json.dumps({
+                "type": "chat_tool",
+                "tool": tool_name,
+            })),
+            loop,
+        )
+
+    def on_done(full_text, new_session_id):
+        """Завершение ответа."""
+        if new_session_id:
+            _chat_sessions[websocket] = new_session_id
+        asyncio.run_coroutine_threadsafe(
+            websocket.send(json.dumps({
+                "type": "chat_done",
+                "session_id": new_session_id,
+            })),
+            loop,
+        )
+
+    cwd = _project_root or os.getcwd()
+    claude_stream(message, cwd, on_chunk, on_done, on_tool, session_id)
 
 
 def notify_clients(event_type, data=None):

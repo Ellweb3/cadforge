@@ -200,7 +200,7 @@ for obj in doc.Objects:
             except Exception:
                 pass
 
-        objects_meta.append({{
+        meta = {{
             "name": name,
             "stl": f"{{name}}.stl",
             "color": list(color),
@@ -208,7 +208,17 @@ for obj in doc.Objects:
             "bbox": [bb.XMin, bb.YMin, bb.ZMin, bb.XMax, bb.YMax, bb.ZMax],
             "volume": obj.Shape.Volume,
             "group": _obj_module.get(name, "other"),
-        }})
+        }}
+        # Текстура
+        if hasattr(obj, "CadForgeTexture") and obj.CadForgeTexture:
+            try:
+                tex_parts = obj.CadForgeTexture.split(";")
+                meta["texture"] = tex_parts[0]
+                if len(tex_parts) > 1:
+                    meta["tex_scale"] = float(tex_parts[1])
+            except Exception:
+                pass
+        objects_meta.append(meta)
     except Exception as e:
         print(f"  WARN: skip {{name}}: {{e}}")
 

@@ -28,6 +28,10 @@ interface ViewerState {
   // Layers
   layers: LayerGroup[]
 
+  // Chat
+  chatOpen: boolean
+  toggleChat: () => void
+
   // Sun
   sunPanelOpen: boolean
   sunLat: number
@@ -83,9 +87,12 @@ export const useStore = create<ViewerState>((set, get) => ({
 
   flyMode: false,
   wireframeMode: false,
-  gridVisible: true,
+  gridVisible: false,
 
   layers: [],
+
+  chatOpen: true,
+  toggleChat: () => set(s => ({ chatOpen: !s.chatOpen })),
 
   sunPanelOpen: false,
   sunLat: savedLat ? +savedLat : -34.925261,

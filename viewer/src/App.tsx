@@ -5,6 +5,7 @@ import { LayerPanel } from './components/LayerPanel'
 import { StatusBar } from './components/StatusBar'
 import { SunPanel } from './components/SunPanel'
 import { LogPanel } from './components/LogPanel'
+import { ChatPanel } from './components/ChatPanel'
 import { useWebSocket } from './hooks/useWebSocket'
 import './App.css'
 
@@ -20,6 +21,7 @@ export default function App() {
       <StatusBar />
       <SunPanel />
       <LogPanel />
+      <ChatPanel />
     </>
   )
 }
